@@ -49,6 +49,8 @@
     - [x] backgorund color of a current cell a piece reachs
     - [x] circles on cells a selected pieace can move
 
+    ![title](Images/motion.gif)
+
 4. Events
     - [ ] mouse over and out a cell
     - [ ] select a cell

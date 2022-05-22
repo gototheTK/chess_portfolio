@@ -7,18 +7,18 @@ class ChessGame extends React.Component{
     componentDidMount() {
         var svg = d3.select('#chess');
         var board = items.board(svg);
-        var whiteKing = items.whiteKing(svg);
+        var whiteKing = items.WhiteKing(svg);
         var whiteQueen = items.whiteQueen(svg);
         var whiteBishop = items.whiteBishop(svg);
         var whiteKnight = items.whiteKnight(svg);
         var whiteRook = items.whiteRook(svg);
         var whitePawn = items.whitePawn(svg);
-        var whiteKing = items.blackKing(svg);
-        var whiteQueen = items.blackQueen(svg);
-        var whiteBishop = items.blackBishop(svg);
-        var whiteKnight = items.blackKnight(svg);
-        var whiteRook = items.blackRook(svg);
-        var whitePawn = items.blackPawn(svg);
+        var blackKing = items.blackKing(svg);
+        var blackQueen = items.blackQueen(svg);
+        var blackBishop = items.blackBishop(svg);
+        var blackKnight = items.blackKnight(svg);
+        var blackRook = items.blackRook(svg);
+        var blackPawn = items.blackPawn(svg);
         //Do svg stuff
     }
     

@@ -53,18 +53,32 @@ const cells = () => {
 
 
 
+function Player(){
+  this.select = null;
+  this.x=0;
+  this.y=0;
+  this.show = () => console.log(this.x, this.y, this.select);
+  this.move = () => {
+    this.select.transition().delay(500).attr("transform", `translate(${this.x}, ${this.y}) scale(1)`);
+    this.select=null;
+  };
+}
 
-var svg = d3.select('chess').append(SVG).attr(WIDTH, svgWidth).attr(HEIGHT, svgHeight);
-
-
+const white = new Player();
 
 const board = (svg) => {
-  return svg.selectAll(RECT).data(cells).enter().append(RECT).attr(WIDTH, cellSize).attr(HEIGHT, cellSize).style(FILL, d => d.color).attr(X, d => d.x).attr(Y, d => d.y).attr("transform", "scale("+ pieaceScale+ ")");
+  return svg.selectAll(RECT).data(cells).enter().append(RECT).attr(WIDTH, cellSize).attr(HEIGHT, cellSize).style(FILL, d => d.color).attr(X, d => d.x).attr(Y, d => d.y).attr("transform", "scale("+ pieaceScale+ ")").on("mouseover", (e,d) => {
+    white.x = d.x;
+    white.y = d.y;
+    white.show();
+  }).on("click", (e,d) => {
+    white.select && white.move();
+  });
 }
 
 
 
-const whiteKing = (svg) => {
+function WhiteKing(svg) {
   const p0 = svg.append("g").attr("style", "fill:none; fill-opacity:1; fill-rule:evenodd; stroke:#000000; stroke-width:1.5; stroke-linecap:round;stroke-linejoin:round;stroke-miterlimit:4; stroke-dasharray:none; stroke-opacity:1; cursor:pointer;").attr("transform", "translate(0,0) scale("+ pieaceScale+ ")");
   p0.append("path").attr("d", "M 22.5,11.63 L 22.5,6").attr("style", "fill:none; stroke:#000000; stroke-linejoin:miter;");
   p0.append("path").attr("d", "M 20,8 L 25,8").attr("style", "fill:none; stroke:#000000; stroke-linejoin:miter;");
@@ -73,6 +87,11 @@ const whiteKing = (svg) => {
   p0.append("path").attr("d", "M 11.5,30 C 17,27 27,27 32.5,30").attr("style", "fill:none; stroke:#000000;");
   p0.append("path").attr("d", "M 11.5,33.5 C 17,30.5 27,30.5 32.5,33.5").attr("style", "fill:none; stroke:#000000;");
   p0.append("path").attr("d", "M 11.5,37 C 17,34 27,34 32.5,37").attr("style", "fill:none; stroke:#000000;");
+  p0.on("click", function() {
+
+    white.select = p0;
+
+  });
 
   return p0;
 }
@@ -88,6 +107,12 @@ p1.append("path").attr("d", "M 9,26 C 17.5,24.5 30,24.5 36,26 L 38,14 L 31,25 L 
 p1.append("path").attr("d", "M 9,26 C 9,28 10.5,28 11.5,30 C 12.5,31.5 12.5,31 12,33.5 C 10.5,34.5 10.5,36 10.5,36 C 9,37.5 11,38.5 11,38.5 C 17.5,39.5 27.5,39.5 34,38.5 C 34,38.5 35.5,37.5 34,36 C 34,36 34.5,34.5 33,33.5 C 32.5,31 32.5,31.5 33.5,30 C 34.5,28 36,28 36,26 C 27.5,24.5 17.5,24.5 9,26 z ").attr("style", "stroke-linecap:butt;");
 p1.append("path").attr("d", "M 11.5,30 C 15,29 30,29 33.5,30").attr("style", "fill:none;");
 p1.append("path").attr("d", "M 12,33.5 C 18,32.5 27,32.5 33,33.5").attr("style", "fill:none;");
+p1.on("click", function() {
+
+    white.select = p1;
+
+  });
+
   return p1
 }
 
@@ -207,7 +232,7 @@ return p14;
 
 
 
-export {board, whiteKing, whiteQueen, whiteBishop, whiteKnight, whiteRook, whitePawn
+export {board, WhiteKing, whiteQueen, whiteBishop, whiteKnight, whiteRook, whitePawn
 ,blackKing, blackQueen, blackBishop, blackKnight, blackRook, blackPawn};
 
 
