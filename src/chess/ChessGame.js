@@ -1,42 +1,63 @@
-import React from 'react';
-import * as d3 from 'd3';
-import * as items from './items.js';
+import React from "react";
+import * as d3 from "d3";
+import * as items from "./chessItems.js";
+import * as styles from "./chessStyles";
 
-class ChessGame extends React.Component{
+class ChessGame extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      white: new items.Player(),
+      svg: {},
+    };
+  }
 
-    componentDidMount() {
-        var svg = d3.select('#chess');
-        var board = items.board(svg);
-        var whiteKing = items.WhiteKing(svg);
-        var whiteQueen = items.whiteQueen(svg);
-        var whiteBishop = items.whiteBishop(svg);
-        var whiteKnight = items.whiteKnight(svg);
-        var whiteRook = items.whiteRook(svg);
-        var whitePawn = items.whitePawn(svg);
-        var blackKing = items.blackKing(svg);
-        var blackQueen = items.blackQueen(svg);
-        var blackBishop = items.blackBishop(svg);
-        var blackKnight = items.blackKnight(svg);
-        var blackRook = items.blackRook(svg);
-        var blackPawn = items.blackPawn(svg);
-        //Do svg stuff
-    }
-    
+  componentDidMount() {
+    var svg = d3.select(items.CHESSID);
+    var board = items.board(svg, this.state.white);
+    var whiteKing = new items.WhiteKing(svg, this.state.white);
+    //Do svg stuff
+  }
 
-      render() {
-        return (
-          <svg id="chess" width={1200} height={720} >
-            
-          </svg>
-        );
-      }
-
+  render() {
+    return (
+      <section style={styles.chess}>
+        <svg
+          id={items.CHESS}
+          width={items.svgSize}
+          height={items.svgSize}
+        ></svg>
+        <div style={styles.status}>
+          <ul style={styles.player}>
+            <span>black</span>
+            <li>1</li>
+            <li>1</li>
+            <li>1</li>
+            <li>1</li>
+            <li>1</li>
+            <li>1</li>
+            <li>1</li>
+            <li>1</li>
+            <li>1</li>
+            <li>1</li>
+            <li>1</li>
+            <li>1</li>
+          </ul>
+          <ul style={styles.player}>
+            <span>white</span>
+            <li>1</li>
+            <li>1</li>
+            <li>1</li>
+            <li>1</li>
+            <li>1</li>
+            <li>1</li>
+            <li>1</li>
+            <li>1</li>
+          </ul>
+        </div>
+      </section>
+    );
+  }
 }
 
-
-
 export default ChessGame;
-
-
-
-
