@@ -1,7 +1,10 @@
 import React from "react";
 import * as d3 from "d3";
-import { Board, CHESS, CHESSID, Piece, svgSize } from "./chessItems.js";
-import * as styles from "./chessStyles";
+import { Board, Piece } from "./chessItems.js";
+import { chess, player, status, svgSize } from "./chessStyles";
+
+const CHESS = "chess";
+const CHESSID = "#chess";
 
 const WHITE = "white";
 const BLACK = "black";
@@ -63,10 +66,10 @@ class ChessGame extends React.Component {
 
   render() {
     return (
-      <section style={styles.chess}>
-        <svg id={CHESS} width={svgSize} height={svgSize}></svg>
-        <div style={styles.status}>
-          <ul style={styles.player}>
+      <section style={chess}>
+        <svg id={CHESS} style={svgSize}></svg>
+        <div style={status}>
+          <ul style={player}>
             <span>black</span>
             <li>1</li>
             <li>1</li>
@@ -81,7 +84,7 @@ class ChessGame extends React.Component {
             <li>1</li>
             <li>1</li>
           </ul>
-          <ul style={styles.player}>
+          <ul style={player}>
             <span>white</span>
             <li>1</li>
             <li>1</li>

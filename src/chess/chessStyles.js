@@ -1,6 +1,10 @@
-import * as items from "./chessItems.js";
+import { boardSize, cellSize, svgHeight, svgWidth } from "./chessItems.js";
 
 //ChessGame
+export const svgSize = {
+  width: svgWidth,
+  height: svgHeight,
+};
 
 export const chess = {
   display: "flex",
@@ -14,12 +18,12 @@ export const chess = {
 export const status = {
   display: "flex",
   gap: "1.9rem",
-  maxHeight: items.svgSize,
+  maxHeight: svgHeight,
 };
 
 export const player = {
   display: "block",
-  height: items.svgSize,
-  maxHeight: items.svgSize,
+  height: svgHeight,
+  maxHeight: svgHeight,
   border: "2px groove var(--primary-color)",
 };

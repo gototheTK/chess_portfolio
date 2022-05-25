@@ -4,9 +4,8 @@ import { whitePieces } from "./pieces/whitePieces";
 
 const WIDTH = "width";
 const HEIGHT = "height";
-
-export const CHESS = "chess";
-export const CHESSID = "#chess";
+const FILL = "fill";
+const FILLOPACITY = "fill-opacity";
 
 const RECT = "rect";
 const X = "x";
@@ -17,30 +16,20 @@ const COLUMNS = ["a", "b", "c", "d", "e", "f", "g", "h"];
 const toRow = { 1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5, 7: 6, 8: 7 };
 const toCol = { a: 0, b: 1, c: 2, d: 3, e: 4, f: 5, g: 6, h: 7 };
 
-const FILL = "fill";
-const FILLOPACITY = "fill-opacity";
-
-const svgWidth = 1280;
-const svgHeight = 720;
-
-const boardSize = 8;
-const cellSize = 45;
-
+export const boardSize = 8;
+export const cellSize = 45;
+export const svgWidth = boardSize * cellSize;
+export const svgHeight = boardSize * cellSize;
 const boardHeight = (boardSize - 1) * cellSize;
-
-export let svgSize = boardSize * cellSize;
+const pieceScale = 1;
 
 const cellNumbers = 64;
 const cellColors = ["hsl(30, 100%, 81%, 0.7)", "	hsl(30, 60%, 55%, 0.7)"];
-
 const previousPlaceColor = "hsl(131, 54%, 20%, 0.5)";
-export const possiblePlaceColor = "hsl(131, 54%, 30%, 0.5)";
+const possiblePlaceColor = "hsl(131, 54%, 30%, 0.5)";
 const currentPlaceColor = "hsl(131, 54%, 50%, 0.4)";
-
 const attackPlaceColor = "hsl(131, 10%, 50%, 0.4)";
 const checkPlaceColor = "hsl(0, 100%, 50%, 0.3)";
-
-const pieaceScale = 1;
 
 const WHITE = "white";
 const BLACK = "black";
@@ -50,25 +39,6 @@ const KNIGHT = "knight";
 const BISHOP = "bishop";
 const ROOK = "rook";
 const PAWN = "pawn";
-
-class Player {
-  constructor() {
-    this.select = null;
-    this.x = 0;
-    this.y = 0;
-    this.turn = "white";
-  }
-  show = () => console.log(this.x, this.y, this.select);
-  move = (cell) => {
-    this.select.rect.attr("fill-opacity", 0);
-    this.select.svg
-      .transition()
-      .duration(500)
-      .attr("transform", `translate(${this.x}, ${this.y}) scale(1)`);
-    cell.status = this.turn;
-    this.select = null;
-  };
-}
 
 const toX = (x) => toCol[x] * cellSize;
 const toY = (y) => boardHeight - toRow[y] * cellSize;
@@ -96,6 +66,25 @@ const cells = () => {
   return result;
 };
 
+class Player {
+  constructor() {
+    this.select = null;
+    this.x = 0;
+    this.y = 0;
+    this.turn = "white";
+  }
+  show = () => console.log(this.x, this.y, this.select);
+  move = (cell) => {
+    this.select.rect.attr("fill-opacity", 0);
+    this.select.svg
+      .transition()
+      .duration(500)
+      .attr("transform", `translate(${this.x}, ${this.y}) scale(1)`);
+    cell.status = this.turn;
+    this.select = null;
+  };
+}
+
 class Board {
   constructor(svg, player) {
     this.select = null;
@@ -117,7 +106,7 @@ class Board {
       .style(FILL, (d) => d.color)
       .attr(X, (d) => d.x)
       .attr(Y, (d) => d.y)
-      .attr("transform", "scale(" + pieaceScale + ")")
+      .attr("transform", "scale(" + pieceScale + ")")
       .on("mouseover", (e, d) => {
         this.x = d.x;
         this.y = d.y;
@@ -144,7 +133,7 @@ class Board {
       .attr(FILLOPACITY, 0)
       .attr("cx", (d) => d.x + cellSize / 2)
       .attr("cy", (d) => d.y + cellSize / 2)
-      .attr("transform", "scale(" + pieaceScale + ")");
+      .attr("transform", "scale(" + pieceScale + ")");
   }
 
   show = () => console.log(this.x, this.y, this.select);
@@ -190,7 +179,7 @@ export class Piece {
       "transform",
       `translate(${toX(coordinate[0])},${toY(
         coordinate[1]
-      )}) scale(${pieaceScale})`
+      )}) scale(${pieceScale})`
     );
 
     this.piece.rect.attr("fill", possiblePlaceColor).on("click", () => {
@@ -202,7 +191,7 @@ export class Piece {
         this.board.select = null;
       } else {
         this.board.select = this;
-        this.piece.rect.attr("fill-opacity", 0.5);
+        this.piece.rect.attr(FILLOPACITY, 0.5);
         this.availableCells.map((cell) => {
           d3.select("#c" + cell).attr(FILLOPACITY, 0.5);
         });
