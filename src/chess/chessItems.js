@@ -66,25 +66,6 @@ const cells = () => {
   return result;
 };
 
-class Player {
-  constructor() {
-    this.select = null;
-    this.x = 0;
-    this.y = 0;
-    this.turn = "white";
-  }
-  show = () => console.log(this.x, this.y, this.select);
-  move = (cell) => {
-    this.select.rect.attr("fill-opacity", 0);
-    this.select.svg
-      .transition()
-      .duration(500)
-      .attr("transform", `translate(${this.x}, ${this.y}) scale(1)`);
-    cell.status = this.turn;
-    this.select = null;
-  };
-}
-
 class Board {
   constructor(svg, player) {
     this.select = null;
@@ -93,7 +74,7 @@ class Board {
     this.turn = "white";
     this.cells = cells();
     this.playCells = cells();
-
+    this.pieceScale = 1;
     this.board = svg
       .attr("id", "board")
       .selectAll(RECT)
@@ -106,7 +87,7 @@ class Board {
       .style(FILL, (d) => d.color)
       .attr(X, (d) => d.x)
       .attr(Y, (d) => d.y)
-      .attr("transform", "scale(" + pieceScale + ")")
+      .attr("transform", "scale(" + this.pieceScale + ")")
       .on("mouseover", (e, d) => {
         this.x = d.x;
         this.y = d.y;
@@ -133,7 +114,7 @@ class Board {
       .attr(FILLOPACITY, 0)
       .attr("cx", (d) => d.x + cellSize / 2)
       .attr("cy", (d) => d.y + cellSize / 2)
-      .attr("transform", "scale(" + pieceScale + ")");
+      .attr("transform", "scale(" + this.pieceScale + ")");
   }
 
   show = () => console.log(this.x, this.y, this.select);
@@ -147,7 +128,10 @@ class Board {
       this.select.piece.svg
         .transition()
         .duration(500)
-        .attr("transform", `translate(${this.x}, ${this.y}) scale(1)`);
+        .attr(
+          "transform",
+          `translate(${this.x}, ${this.y}) scale(${this.pieceScale})`
+        );
       cell.status = this.turn;
       this.select.coordinate = `${cell.xi}${cell.yi}`;
       this.select.availableCells = this.select.findAvailableCells(
@@ -177,9 +161,9 @@ export class Piece {
     this.piece = new pieceTypes[color][type](svg);
     this.piece.svg.attr(
       "transform",
-      `translate(${toX(coordinate[0])},${toY(
-        coordinate[1]
-      )}) scale(${pieceScale})`
+      `translate(${toX(coordinate[0])},${toY(coordinate[1])}) scale(${
+        this.board.pieceScale
+      })`
     );
 
     this.piece.rect.attr("fill", possiblePlaceColor).on("click", () => {
@@ -405,4 +389,4 @@ export class Piece {
   }
 }
 
-export { Player, Board };
+export { Board };

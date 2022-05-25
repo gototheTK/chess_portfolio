@@ -776,3 +776,22 @@
 //       this.rect.attr("fill", possiblePlaceColor).attr("fill-opacity", 0.5);
 //     });
 //   }
+
+/*class Player {
+  constructor() {
+    this.select = null;
+    this.x = 0;
+    this.y = 0;
+    this.turn = "white";
+  }
+  show = () => console.log(this.x, this.y, this.select);
+  move = (cell) => {
+    this.select.rect.attr("fill-opacity", 0);
+    this.select.svg
+      .transition()
+      .duration(500)
+      .attr("transform", `translate(${this.x}, ${this.y}) scale(1)`);
+    cell.status = this.turn;
+    this.select = null;
+  };
+}*/
