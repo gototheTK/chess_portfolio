@@ -1,7 +1,18 @@
 import React from "react";
 import * as d3 from "d3";
-import * as items from "./chessItems.js";
+import { Board, CHESS, CHESSID, Piece, svgSize } from "./chessItems.js";
 import * as styles from "./chessStyles";
+
+const WHITE = "white";
+const BLACK = "black";
+const KING = "king";
+const QUEEN = "queen";
+const KNIGHT = "knight";
+const BISHOP = "bishop";
+const ROOK = "rook";
+const PAWN = "pawn";
+
+const piecesTypes = [KING, QUEEN, KNIGHT, BISHOP, ROOK, PAWN];
 
 const start = {
   white: {
@@ -22,67 +33,29 @@ const start = {
   },
 };
 
-const WHITE = "white";
-const BLACK = "black";
-const KING = "king";
-const QUEEN = "queen";
-const KNIGHT = "knight";
-const BISHOP = "bishop";
-const ROOK = "rook";
-const PAWN = "pawn";
-
 class ChessGame extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
-      white: new items.Player(),
-      black: new items.Player(),
+      game: {},
       svg: {},
     };
   }
 
   componentDidMount() {
-    var svg = d3.select(items.CHESSID);
-    var board = new items.Board(svg, this.state.white);
+    var svg = d3.select(CHESSID);
+    var board = new Board(svg, this.state.white);
 
-    var whitePlayer = {
-      king: start[WHITE][KING].map(
-        (place) => new items.Piece(svg, board, place, WHITE, KING)
+    var game = {
+      white: piecesTypes.map((key) =>
+        start.white[key].map(
+          (place) => new Piece(svg, board, place, WHITE, key)
+        )
       ),
-      queen: start[WHITE][QUEEN].map(
-        (place) => new items.Piece(svg, board, place, WHITE, QUEEN)
-      ),
-      bishop: start[WHITE][BISHOP].map(
-        (place) => new items.Piece(svg, board, place, WHITE, BISHOP)
-      ),
-      knight: start[WHITE][KNIGHT].map(
-        (place) => new items.Piece(svg, board, place, WHITE, KNIGHT)
-      ),
-      rook: start[WHITE][ROOK].map(
-        (place) => new items.Piece(svg, board, place, WHITE, ROOK)
-      ),
-      pawn: start[WHITE][PAWN].map(
-        (place) => new items.Piece(svg, board, place, WHITE, PAWN)
-      ),
-    };
-    var BlackPlayer = {
-      king: start[BLACK][KING].map(
-        (place) => new items.Piece(svg, board, place, BLACK, KING)
-      ),
-      queen: start[BLACK][QUEEN].map(
-        (place) => new items.Piece(svg, board, place, BLACK, QUEEN)
-      ),
-      bishop: start[BLACK][BISHOP].map(
-        (place) => new items.Piece(svg, board, place, BLACK, BISHOP)
-      ),
-      knight: start[BLACK][KNIGHT].map(
-        (place) => new items.Piece(svg, board, place, BLACK, KNIGHT)
-      ),
-      rook: start[BLACK][ROOK].map(
-        (place) => new items.Piece(svg, board, place, BLACK, ROOK)
-      ),
-      pawn: start[BLACK][PAWN].map(
-        (place) => new items.Piece(svg, board, place, BLACK, PAWN)
+      black: piecesTypes.map((key) =>
+        start.black[key].map(
+          (place) => new Piece(svg, board, place, BLACK, key)
+        )
       ),
     };
     //Do svg stuff
@@ -91,11 +64,7 @@ class ChessGame extends React.Component {
   render() {
     return (
       <section style={styles.chess}>
-        <svg
-          id={items.CHESS}
-          width={items.svgSize}
-          height={items.svgSize}
-        ></svg>
+        <svg id={CHESS} width={svgSize} height={svgSize}></svg>
         <div style={styles.status}>
           <ul style={styles.player}>
             <span>black</span>
