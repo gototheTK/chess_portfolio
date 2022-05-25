@@ -2,14 +2,28 @@ import * as d3 from "d3";
 import { blackPieces } from "./pieces/blackPieces";
 import { whitePieces } from "./pieces/whitePieces";
 
+const BOARD = "board";
 const WIDTH = "width";
 const HEIGHT = "height";
 const FILL = "fill";
+const ID = "id";
 const FILLOPACITY = "fill-opacity";
+const CLICK = "click";
+const TRANSFORM = "transform";
+const POINTEREVENTS = "pointer-events";
+const MOUSEOVER = "mouseover";
+const NONE = "none";
 
 const RECT = "rect";
 const X = "x";
 const Y = "y";
+
+const CIRCLE = "circle";
+const C = "c";
+const CX = "cx";
+const CY = "cy";
+const R = "r";
+
 const ROWS = ["1", "2", "3", "4", "5", "6", "7", "8"];
 const COLUMNS = ["a", "b", "c", "d", "e", "f", "g", "h"];
 
@@ -21,7 +35,6 @@ export const cellSize = 45;
 export const svgWidth = boardSize * cellSize;
 export const svgHeight = boardSize * cellSize;
 const boardHeight = (boardSize - 1) * cellSize;
-const pieceScale = 1;
 
 const cellNumbers = 64;
 const cellColors = ["hsl(30, 100%, 81%, 0.7)", "	hsl(30, 60%, 55%, 0.7)"];
@@ -40,8 +53,15 @@ const BISHOP = "bishop";
 const ROOK = "rook";
 const PAWN = "pawn";
 
+const toID = (id) => "#" + id;
+const toCircleID = (id) => "#c" + id;
+
 const toX = (x) => toCol[x] * cellSize;
 const toY = (y) => boardHeight - toRow[y] * cellSize;
+
+const toScale = (scale) => `scale(${scale})`;
+const toTransformScale = (x, y, scale) =>
+  `translate(${x}, ${y}) scale(${scale})`;
 
 const cells = () => {
   const boardHeight = cellSize * (boardSize - 1);
@@ -71,30 +91,30 @@ class Board {
     this.select = null;
     this.x = 0;
     this.y = 0;
-    this.turn = "white";
+    this.turn = WHITE;
     this.cells = cells();
     this.playCells = cells();
     this.pieceScale = 1;
     this.board = svg
-      .attr("id", "board")
+      .attr(ID, BOARD)
       .selectAll(RECT)
       .data(this.cells)
       .enter()
       .append(RECT)
-      .attr("id", (d) => d.xi + d.yi)
+      .attr(ID, (d) => d.xi + d.yi)
       .attr(WIDTH, cellSize)
       .attr(HEIGHT, cellSize)
       .style(FILL, (d) => d.color)
       .attr(X, (d) => d.x)
       .attr(Y, (d) => d.y)
-      .attr("transform", "scale(" + this.pieceScale + ")")
-      .on("mouseover", (e, d) => {
+      .attr(TRANSFORM, toScale(this.pieceScale))
+      .on(MOUSEOVER, (e, d) => {
         this.x = d.x;
         this.y = d.y;
         this.show();
         console.log(d.xi, d.yi, d.status);
       })
-      .on("click", (e, d) => {
+      .on(CLICK, (e, d) => {
         console.log(d.xi, d.yi, d.status);
         this.show();
         this.select && this.move(e, d);
@@ -102,36 +122,33 @@ class Board {
       });
 
     this.circles = d3
-      .select("#board")
-      .selectAll("circle")
+      .select(toID(BOARD))
+      .selectAll(CIRCLE)
       .data(this.playCells)
       .enter()
-      .append("circle")
-      .attr("id", (d) => "c" + d.xi + d.yi)
-      .attr("r", 10)
-      .style("pointer-events", "none")
+      .append(CIRCLE)
+      .attr(ID, (d) => C + d.xi + d.yi)
+      .attr(R, 10)
+      .style(POINTEREVENTS, NONE)
       .attr(FILL, possiblePlaceColor)
       .attr(FILLOPACITY, 0)
-      .attr("cx", (d) => d.x + cellSize / 2)
-      .attr("cy", (d) => d.y + cellSize / 2)
-      .attr("transform", "scale(" + this.pieceScale + ")");
+      .attr(CX, (d) => d.x + cellSize / 2)
+      .attr(CY, (d) => d.y + cellSize / 2)
+      .attr(TRANSFORM, toScale(this.pieceScale));
   }
 
   show = () => console.log(this.x, this.y, this.select);
   move = (event, cell) => {
     const contain = this.select.availableCells.indexOf(event.target.id);
     this.select.availableCells.map((data) => {
-      d3.select("#c" + data).attr(FILLOPACITY, 0);
+      d3.select(toCircleID(data)).attr(FILLOPACITY, 0);
     });
     this.select.piece.rect.attr(FILLOPACITY, 0);
     if (contain > -1) {
       this.select.piece.svg
         .transition()
         .duration(500)
-        .attr(
-          "transform",
-          `translate(${this.x}, ${this.y}) scale(${this.pieceScale})`
-        );
+        .attr(TRANSFORM, toTransformScale(this.x, this.y, this.pieceScale));
       cell.status = this.turn;
       this.select.coordinate = `${cell.xi}${cell.yi}`;
       this.select.availableCells = this.select.findAvailableCells(
@@ -160,24 +177,27 @@ export class Piece {
   makePiece(svg, color, type, coordinate) {
     this.piece = new pieceTypes[color][type](svg);
     this.piece.svg.attr(
-      "transform",
-      `translate(${toX(coordinate[0])},${toY(coordinate[1])}) scale(${
+      TRANSFORM,
+      toTransformScale(
+        toX(coordinate[0]),
+        toY(coordinate[1]),
         this.board.pieceScale
-      })`
+      )
     );
 
-    this.piece.rect.attr("fill", possiblePlaceColor).on("click", () => {
+    this.piece.rect.attr(FILL, possiblePlaceColor).on(CLICK, () => {
       if (this.board.select !== null) {
         this.piece.rect.attr(FILLOPACITY, 0);
         this.availableCells.map((cell) => {
-          d3.select("#c" + cell).attr(FILLOPACITY, 0);
+          d3.select(toCircleID(cell)).attr(FILLOPACITY, 0);
         });
         this.board.select = null;
       } else {
         this.board.select = this;
         this.piece.rect.attr(FILLOPACITY, 0.5);
         this.availableCells.map((cell) => {
-          d3.select("#c" + cell).attr(FILLOPACITY, 0.5);
+          console.log(cell);
+          d3.select(toCircleID(cell)).attr(FILLOPACITY, 0.5);
         });
       }
     });
@@ -189,7 +209,7 @@ export class Piece {
   }
   decideMove(type) {
     switch (type) {
-      case "king":
+      case KING:
         return (coordinate) => {
           const result = [];
 
@@ -247,13 +267,13 @@ export class Piece {
 
           return result;
         };
-      case "queen":
+      case QUEEN:
         return (coordinate) => {
           const horizontal = this.decideMove(BISHOP)(coordinate);
           const diagonal = this.decideMove(ROOK)(coordinate);
           return [...horizontal, ...diagonal];
         };
-      case "bishop":
+      case BISHOP:
         return (coordinate) => {
           const result = [];
 
@@ -291,7 +311,7 @@ export class Piece {
 
           return result;
         };
-      case "knight":
+      case KNIGHT:
         return (coordinate) => {
           const result = [];
           let row = toRow[coordinate[1]] + 1;
@@ -339,7 +359,7 @@ export class Piece {
           row >= 0 && col >= 0 && result.push(COLUMNS[col] + ROWS[row]);
           return result;
         };
-      case "rook":
+      case ROOK:
         return (coordinate) => {
           const result = [];
 
@@ -371,7 +391,7 @@ export class Piece {
 
           return result;
         };
-      case "pawn":
+      case PAWN:
         return (coordinate) => {
           let result;
           const col = toCol[coordinate[0]];
