@@ -80,7 +80,7 @@
    - Profile Page
    - About
 
-   ![title](Images/front.PNG)
+   ![title](Images/front1.PNG)
 
 ## Chess Logic
 
