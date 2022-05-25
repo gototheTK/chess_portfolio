@@ -1,5 +1,3 @@
-import { possiblePlaceColor } from "./chessItems";
-
 export const blackPieces = {
   king: function (svg) {
     this.svg = svg

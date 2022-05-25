@@ -1,6 +1,6 @@
 import * as d3 from "d3";
-import { blackPieces } from "./blackPieces";
-import { whitePieces } from "./whitePieces";
+import { blackPieces } from "./pieces/blackPieces";
+import { whitePieces } from "./pieces/whitePieces";
 
 const WIDTH = "width";
 const HEIGHT = "height";
