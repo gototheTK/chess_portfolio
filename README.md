@@ -42,7 +42,7 @@
 
    ![title](Images/items.png)
 
-3. Effects
+3. ~~Effects~~
 
    - [x] animation when a pieace move
    - [x] background color of a cell a selected pieace have
@@ -53,10 +53,13 @@
 
    ![title](Images/motion.gif)
 
-4. Events
-   - [ ] mouse over and out a cell
-   - [ ] select a cell
-   - [ ] click another cell with a pieace
+4. ~~Events~~
+
+   - [x] mouse over and out a cell
+   - [x] select a cell
+   - [x] click another cell with a pieace (22.05.26)
+
+   ![title](Images/events.gif)
 
 ## Making a Front Page
 
@@ -66,15 +69,18 @@
    - [x] Chess
    - [] ReadingPage
    - [] WritingPage
-   - [] BoardCard
+   - [x] BoardCard (2022.05.24)
    - [] Login&SingUpFrom
 
 2. Making Pages
-   - Chess Page
+
+   - Chess Page [x] (2022.05.23)
    - Board Page
    - Login Page
    - Profile Page
    - About
+
+   ![title](Images/events.gif)
 
 ## Chess Logic
 
