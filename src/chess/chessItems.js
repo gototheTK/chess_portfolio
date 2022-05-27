@@ -54,6 +54,8 @@ const KNIGHT = "knight";
 const BISHOP = "bishop";
 const ROOK = "rook";
 const PAWN = "pawn";
+const INPASSING = "in_passing";
+const CASTLING = "castling";
 
 const toID = (id) => "#" + id;
 const toCircleID = (id) => "#c" + id;
@@ -100,6 +102,7 @@ class Board {
     this.turn = WHITE;
     this.cells = cells();
     this.pieceScale = 1;
+    this.inpassingCell = null;
     this.board = svg
       .attr(ID, BOARD)
       .selectAll(RECT)
@@ -117,12 +120,10 @@ class Board {
       .on(MOUSEOVER, (e, d) => {
         this.x = d.x;
         this.y = d.y;
-        this.show();
         // console.log(d.xi, d.yi, d.status);
       })
       .on(CLICK, (e, d) => {
         // console.log(d.xi, d.yi, d.status);
-        this.show();
         this.select && this.move(e, d);
         // console.log(d.xi, d.yi, d.status);
       });
@@ -148,6 +149,12 @@ class Board {
     const contain = this.select.availableCells.indexOf(event.target.id);
     this.select.switchFill();
     if (contain > -1) {
+      if (this.select.type === PAWN && (cell.yi === "5" || cell.yi === "4")) {
+        this.isInPassing(cell);
+      }
+
+      this.select.type === INPASSING && this.inPassing(cell);
+
       this.select.piece.svg
         .transition()
         .duration(500)
@@ -155,7 +162,6 @@ class Board {
       this.cells[this.select.currentCellIndex].status = null;
       this.select.currentCellIndex = cell.index;
       this.cells[cell.index].status = this.select;
-
       this.select.coordinate = `${cell.xi}${cell.yi}`;
       this.select.availableCells = this.select.findAvailableCells(
         this.select.coordinate
@@ -164,6 +170,64 @@ class Board {
     }
     this.select = null;
   };
+
+  events(name) {
+    switch (name) {
+      case INPASSING:
+        break;
+      case CASTLING:
+        break;
+      default:
+    }
+  }
+
+  inPassing(cell) {
+    this.cells[cell.index].status.piece.svg
+      .transition()
+      .duration(500)
+      .attr(
+        TRANSFORM,
+        toTransformScale(this.x + svgWidth, this.y, this.pieceScale)
+      );
+    this.select.type = PAWN;
+    console.log("패싱후", this.select.type);
+  }
+
+  isInPassing(cell) {
+    const col = toCol[cell.xi];
+    const row = toRow[cell.yi];
+    let row1 = this.select.color === BLACK ? row + 1 : row - 1;
+    let col1 = col + 1 < boardSize ? col + 1 : null;
+    let col2 = col - 1 >= 0 ? col - 1 : null;
+
+    const right =
+      col1 &&
+      this.cells[row * boardSize + col1].status &&
+      this.cells[row * boardSize + col1].status.color !== this.select.color;
+
+    const left =
+      col2 &&
+      this.cells[row * boardSize + col2].status &&
+      this.cells[row * boardSize + col2].status.color !== this.select.color;
+
+    left !== null &&
+      left !== false &&
+      left !== undefined &&
+      (() => {
+        this.cells[row1 * boardSize + col].status = this.select;
+        this.cells[row * boardSize + col2].status &&
+          (this.cells[row * boardSize + col2].status.type = INPASSING);
+      })();
+
+    right !== null &&
+      right !== false &&
+      right !== undefined &&
+      (() => {
+        this.cells[row1 * boardSize + col].status = this.select;
+        this.cells[row * boardSize + col1].status &&
+          (this.cells[row * boardSize + col1].status.type = INPASSING);
+      })();
+  }
 
   switchTurn() {
     this.turn = this.turn === WHITE ? BLACK : WHITE;
@@ -268,7 +332,7 @@ export class Piece {
     this.fillStatus = this.selected ? 0.5 : 0;
     this.selected &&
       (this.availableCells = this.findAvailableCells(this.coordinate));
-    console.log(this.availableCells);
+
     this.piece.rect.attr(FILLOPACITY, this.fillStatus) &&
       this.availableCells.map((cell) => {
         let isPiece = this.cells[calIndex(cell[1], cell[0])].status;
@@ -568,6 +632,72 @@ export class Piece {
           return result;
         };
       case PAWN:
+        return (coordinate, passedResult = []) => {
+          let result = passedResult;
+          let col = toCol[coordinate[0]];
+          let row = toRow[coordinate[1]];
+
+          let col1 = col + 1 < boardSize ? col + 1 : null;
+          let col2 = col - 1 >= 0 ? col - 1 : null;
+
+          let row1 = this.color === WHITE ? row + 1 : row - 1;
+          row1 < boardSize &&
+            row1 >= 0 &&
+            this.cells[row1 * boardSize + col].status == null &&
+            result.push(COLUMNS[col] + ROWS[row1]);
+
+          let row2 =
+            this.color === WHITE && coordinate[1] === "2"
+              ? row + 2
+              : this.color === BLACK && coordinate[1] === "7"
+              ? row - 2
+              : null;
+
+          row2 &&
+            this.cells[row2 * boardSize + col].status == null &&
+            row2 &&
+            result.push(COLUMNS[col] + ROWS[row2]);
+
+          col1 &&
+            this.cells[row1 * boardSize + col1].status &&
+            this.cells[row1 * boardSize + col1].status.color !== this.color &&
+            result.push(COLUMNS[col1] + ROWS[row1]);
+          col2 &&
+            this.cells[row1 * boardSize + col2].status &&
+            this.cells[row1 * boardSize + col2].status.color !== this.color &&
+            result.push(COLUMNS[col2] + ROWS[row1]);
+
+          return result;
+        };
+      case INPASSING:
+        return (coordinate) => {
+          let result = [];
+          let col = toCol[coordinate[0]];
+          let row = toRow[coordinate[1]];
+
+          row = this.color === WHITE ? row + 1 : row - 1;
+          row < boardSize &&
+            row >= 0 &&
+            this.cells[row * boardSize + col].status == null &&
+            result.push(COLUMNS[col] + ROWS[row]);
+
+          let col1 = col + 1 < boardSize ? col + 1 : null;
+          col1 &&
+            this.cells[row * boardSize + col1].status &&
+            this.cells[row * boardSize + col1].status.color !== this.color &&
+            result.push(COLUMNS[col1] + ROWS[row]);
+
+          let col2 = col - 1 >= 0 ? col - 1 : null;
+          col2 &&
+            this.cells[row * boardSize + col2].status &&
+            this.cells[row * boardSize + col2].status.color !== this.color &&
+            result.push(COLUMNS[col2] + ROWS[row]);
+
+          console.log(result);
+
+          return result;
+        };
+      case CASTLING:
         return (coordinate) => {
           let result = [];
           let col = toCol[coordinate[0]];
