@@ -155,6 +155,7 @@ class Board {
       this.cells[this.select.currentCellIndex].status = null;
       this.select.currentCellIndex = cell.index;
       this.cells[cell.index].status = this.select;
+
       this.select.coordinate = `${cell.xi}${cell.yi}`;
       this.select.availableCells = this.select.findAvailableCells(
         this.select.coordinate
@@ -182,6 +183,7 @@ export class Piece {
     this.currentCellIndex = null;
     this.color = color;
     this.type = type;
+    this.givenCells = [];
     this.availableCells = this.findAvailableCells(coordinate);
     this.piece = this.makePiece(svg, color, type, coordinate);
     this.selected = false;
@@ -223,6 +225,7 @@ export class Piece {
           const index = this.board.select.availableCells.indexOf(
             this.coordinate
           );
+          console.log(this.coordinate);
           if (index > -1) {
             this.board.select.piece.svg
               .transition()
@@ -230,8 +233,8 @@ export class Piece {
               .attr(
                 TRANSFORM,
                 toTransformScale(
-                  toX(coordinate[0]),
-                  toY(coordinate[1]),
+                  toX(this.coordinate[0]),
+                  toY(this.coordinate[1]),
                   this.board.pieceScale
                 )
               ) &&
@@ -241,8 +244,8 @@ export class Piece {
                 .attr(
                   TRANSFORM,
                   toTransformScale(
-                    toX(coordinate[0]) + svgWidth,
-                    toY(coordinate[1]),
+                    toX(this.coordinate[0]) + svgWidth,
+                    toY(this.coordinate[1]),
                     this.board.pieceScale
                   )
                 );
@@ -263,6 +266,9 @@ export class Piece {
   switchFill() {
     this.selected = !this.selected;
     this.fillStatus = this.selected ? 0.5 : 0;
+    this.selected &&
+      (this.availableCells = this.findAvailableCells(this.coordinate));
+    console.log(this.availableCells);
     this.piece.rect.attr(FILLOPACITY, this.fillStatus) &&
       this.availableCells.map((cell) => {
         let isPiece = this.cells[calIndex(cell[1], cell[0])].status;
@@ -277,6 +283,7 @@ export class Piece {
   findAvailableCells(coordinate) {
     return this.decideMove(this.type)(coordinate);
   }
+
   decideMove(type) {
     switch (type) {
       case KING:
@@ -288,6 +295,8 @@ export class Piece {
           let col = toCol[coordinate[0]];
           row < ROWS.length &&
             col < COLUMNS.length &&
+            (this.cells[row * boardSize + col].status == null ||
+              this.cells[row * boardSize + col].status.color !== this.color) &&
             result.push(COLUMNS[col] + ROWS[row]);
 
           //NorthEast
@@ -295,6 +304,8 @@ export class Piece {
           col = toCol[coordinate[0]] + 1;
           row < ROWS.length &&
             col < COLUMNS.length &&
+            (this.cells[row * boardSize + col].status == null ||
+              this.cells[row * boardSize + col].status.color !== this.color) &&
             result.push(COLUMNS[col] + ROWS[row]);
 
           //East
@@ -302,6 +313,8 @@ export class Piece {
           col = toCol[coordinate[0]] + 1;
           row < ROWS.length &&
             col < COLUMNS.length &&
+            (this.cells[row * boardSize + col].status == null ||
+              this.cells[row * boardSize + col].status.color !== this.color) &&
             result.push(COLUMNS[col] + ROWS[row]);
 
           //EastSouth
@@ -309,6 +322,8 @@ export class Piece {
           col = toCol[coordinate[0]] + 1;
           row >= 0 &&
             col < COLUMNS.length &&
+            (this.cells[row * boardSize + col].status == null ||
+              this.cells[row * boardSize + col].status.color !== this.color) &&
             result.push(COLUMNS[col] + ROWS[row]);
 
           //South
@@ -316,23 +331,35 @@ export class Piece {
           col = toCol[coordinate[0]];
           row >= 0 &&
             col < COLUMNS.length &&
+            (this.cells[row * boardSize + col].status == null ||
+              this.cells[row * boardSize + col].status.color !== this.color) &&
             result.push(COLUMNS[col] + ROWS[row]);
 
           //SouthWest
           row = toRow[coordinate[1]] - 1;
           col = toCol[coordinate[0]] - 1;
-          row >= 0 && col >= 0 && result.push(COLUMNS[col] + ROWS[row]);
+          row >= 0 &&
+            col >= 0 &&
+            (this.cells[row * boardSize + col].status == null ||
+              this.cells[row * boardSize + col].status.color !== this.color) &&
+            result.push(COLUMNS[col] + ROWS[row]);
 
           //West
           row = toRow[coordinate[1]];
           col = toCol[coordinate[0]] - 1;
-          row >= 0 && col >= 0 && result.push(COLUMNS[col] + ROWS[row]);
+          row >= 0 &&
+            col >= 0 &&
+            (this.cells[row * boardSize + col].status == null ||
+              this.cells[row * boardSize + col].status.color !== this.color) &&
+            result.push(COLUMNS[col] + ROWS[row]);
 
           //WestNorth
           row = toRow[coordinate[1]] + 1;
           col = toCol[coordinate[0]] - 1;
           row < ROWS.length &&
             col >= 0 &&
+            (this.cells[row * boardSize + col].status == null ||
+              this.cells[row * boardSize + col].status.color !== this.color) &&
             result.push(COLUMNS[col] + ROWS[row]);
 
           return result;
@@ -347,36 +374,65 @@ export class Piece {
         return (coordinate) => {
           const result = [];
 
-          let row = toRow[coordinate[1]];
-          let col = toCol[coordinate[0]];
+          let row = toRow[coordinate[1]] + 1;
+          let col = toCol[coordinate[0]] + 1;
+          let cell = null;
           for (let i = 1; row < ROWS.length && col < COLUMNS.length; i++) {
-            result.push(COLUMNS[col] + ROWS[row]);
-            row = row + 1;
-            col = col + 1;
+            cell = this.cells[row * boardSize + col].status;
+            if (cell) {
+              cell.color !== this.color &&
+                result.push(COLUMNS[col] + ROWS[row]);
+              break;
+            } else {
+              result.push(COLUMNS[col] + ROWS[row]);
+              row = row + 1;
+              col = col + 1;
+            }
           }
 
-          row = toRow[coordinate[1]];
-          col = toCol[coordinate[0]];
+          row = toRow[coordinate[1]] + 1;
+          col = toCol[coordinate[0]] - 1;
           for (let i = 1; row < ROWS.length && col >= 0; i++) {
-            result.push(COLUMNS[col] + ROWS[row]);
-            row = row + 1;
-            col = col - 1;
+            cell = this.cells[row * boardSize + col].status;
+            if (cell) {
+              cell.color !== this.color &&
+                result.push(COLUMNS[col] + ROWS[row]);
+              break;
+            } else {
+              result.push(COLUMNS[col] + ROWS[row]);
+              row = row + 1;
+              col = col - 1;
+            }
           }
 
-          row = toRow[coordinate[1]];
-          col = toCol[coordinate[0]];
+          row = toRow[coordinate[1]] - 1;
+          col = toCol[coordinate[0]] + 1;
           for (let i = 1; row >= 0 && col < COLUMNS.length; i++) {
-            result.push(COLUMNS[col] + ROWS[row]);
-            row = row - 1;
-            col = col + 1;
+            cell = this.cells[row * boardSize + col].status;
+            if (cell) {
+              cell.color !== this.color &&
+                result.push(COLUMNS[col] + ROWS[row]);
+              break;
+            } else {
+              result.push(COLUMNS[col] + ROWS[row]);
+              row = row - 1;
+              col = col + 1;
+            }
           }
 
-          row = toRow[coordinate[1]];
-          col = toCol[coordinate[0]];
+          row = toRow[coordinate[1]] - 1;
+          col = toCol[coordinate[0]] - 1;
           for (let i = 1; row >= 0 && col >= 0; i++) {
-            result.push(COLUMNS[col] + ROWS[row]);
-            row = row - 1;
-            col = col - 1;
+            cell = this.cells[row * boardSize + col].status;
+            if (cell) {
+              cell.color !== this.color &&
+                result.push(COLUMNS[col] + ROWS[row]);
+              break;
+            } else {
+              result.push(COLUMNS[col] + ROWS[row]);
+              row = row - 1;
+              col = col - 1;
+            }
           }
 
           return result;
@@ -386,47 +442,68 @@ export class Piece {
           const result = [];
           let row = toRow[coordinate[1]] + 1;
           let col = toCol[coordinate[0]] + 2;
+
           row < ROWS.length &&
             col < COLUMNS.length &&
+            (this.cells[row * boardSize + col].status == null ||
+              this.cells[row * boardSize + col].status.color !== this.color) &&
             result.push(COLUMNS[col] + ROWS[row]);
 
           row = toRow[coordinate[1]] + 1;
           col = toCol[coordinate[0]] - 2;
           row < ROWS.length &&
             col >= 0 &&
+            (this.cells[row * boardSize + col].status == null ||
+              this.cells[row * boardSize + col].status.color !== this.color) &&
             result.push(COLUMNS[col] + ROWS[row]);
 
           row = toRow[coordinate[1]] + 2;
           col = toCol[coordinate[0]] + 1;
           row < ROWS.length &&
             col < COLUMNS.length &&
+            (this.cells[row * boardSize + col].status == null ||
+              this.cells[row * boardSize + col].status.color !== this.color) &&
             result.push(COLUMNS[col] + ROWS[row]);
 
           row = toRow[coordinate[1]] + 2;
           col = toCol[coordinate[0]] - 1;
           row < ROWS.length &&
             col >= 0 &&
+            (this.cells[row * boardSize + col].status == null ||
+              this.cells[row * boardSize + col].status.color !== this.color) &&
             result.push(COLUMNS[col] + ROWS[row]);
 
           row = toRow[coordinate[1]] - 1;
           col = toCol[coordinate[0]] + 2;
           row >= 0 &&
             col < COLUMNS.length &&
+            (this.cells[row * boardSize + col].status == null ||
+              this.cells[row * boardSize + col].status.color !== this.color) &&
             result.push(COLUMNS[col] + ROWS[row]);
 
           row = toRow[coordinate[1]] - 1;
           col = toCol[coordinate[0]] - 2;
-          row >= 0 && col >= 0 && result.push(COLUMNS[col] + ROWS[row]);
+          row >= 0 &&
+            col >= 0 &&
+            (this.cells[row * boardSize + col].status == null ||
+              this.cells[row * boardSize + col].status.color !== this.color) &&
+            result.push(COLUMNS[col] + ROWS[row]);
 
           row = toRow[coordinate[1]] - 2;
           col = toCol[coordinate[0]] + 1;
           row >= 0 &&
             col < COLUMNS.length &&
+            (this.cells[row * boardSize + col].status == null ||
+              this.cells[row * boardSize + col].status.color !== this.color) &&
             result.push(COLUMNS[col] + ROWS[row]);
 
           row = toRow[coordinate[1]] - 2;
           col = toCol[coordinate[0]] - 1;
-          row >= 0 && col >= 0 && result.push(COLUMNS[col] + ROWS[row]);
+          row >= 0 &&
+            col >= 0 &&
+            (this.cells[row * boardSize + col].status == null ||
+              this.cells[row * boardSize + col].status.color !== this.color) &&
+            result.push(COLUMNS[col] + ROWS[row]);
           return result;
         };
       case ROOK:
@@ -435,29 +512,57 @@ export class Piece {
 
           let col = toCol[coordinate[0]] + 1;
           let row = toRow[coordinate[1]];
+          let cell = null;
           for (let i = 1; col < COLUMNS.length; i++) {
-            result.push(COLUMNS[col] + ROWS[row]);
-            col = col + 1;
+            cell = this.cells[row * boardSize + col].status;
+            if (cell) {
+              cell.color !== this.color &&
+                result.push(COLUMNS[col] + ROWS[row]);
+              break;
+            } else {
+              result.push(COLUMNS[col] + ROWS[row]);
+              col = col + 1;
+            }
           }
 
           col = toCol[coordinate[0]] - 1;
-          console.log(coordinate);
           for (let i = 1; col >= 0; i++) {
-            result.push(COLUMNS[col] + ROWS[row]);
-            col = col - 1;
+            cell = this.cells[row * boardSize + col].status;
+            if (cell) {
+              cell.color !== this.color &&
+                result.push(COLUMNS[col] + ROWS[row]);
+              break;
+            } else {
+              result.push(COLUMNS[col] + ROWS[row]);
+              col = col - 1;
+            }
           }
 
           col = toCol[coordinate[0]];
           row = toRow[coordinate[1]] + 1;
           for (let i = 1; row < ROWS.length; i++) {
-            result.push(COLUMNS[col] + ROWS[row]);
-            row = row + 1;
+            cell = this.cells[row * boardSize + col].status;
+            if (cell) {
+              cell.color !== this.color &&
+                result.push(COLUMNS[col] + ROWS[row]);
+              break;
+            } else {
+              result.push(COLUMNS[col] + ROWS[row]);
+              row = row + 1;
+            }
           }
 
           row = toRow[coordinate[1]] - 1;
           for (let i = 1; row >= 0; i++) {
-            result.push(COLUMNS[col] + ROWS[row]);
-            row = row - 1;
+            cell = this.cells[row * boardSize + col].status;
+            if (cell) {
+              cell.color !== this.color &&
+                result.push(COLUMNS[col] + ROWS[row]);
+              break;
+            } else {
+              result.push(COLUMNS[col] + ROWS[row]);
+              row = row - 1;
+            }
           }
 
           return result;
@@ -466,24 +571,33 @@ export class Piece {
         return (coordinate) => {
           let result = [];
           let col = toCol[coordinate[0]];
-          let row =
-            this.color === WHITE
-              ? toRow[coordinate[1]] + 1
-              : toRow[coordinate[1]] - 1;
-          let cellId = COLUMNS[col] + ROWS[row];
-          result.push(cellId);
+          let row = toRow[coordinate[1]];
+          let row1 = this.color === WHITE ? row + 1 : row - 1;
+          row1 < boardSize &&
+            row1 >= 0 &&
+            this.cells[row1 * boardSize + col].status == null &&
+            result.push(COLUMNS[col] + ROWS[row1]);
 
-          if (
-            (coordinate[1] === "2" && this.color === WHITE) ||
-            (coordinate[1] === "7" && this.color === BLACK)
-          ) {
-            row =
-              this.color === WHITE
-                ? toRow[coordinate[1]] + 2
-                : toRow[coordinate[1]] - 2;
-            cellId = COLUMNS[col] + ROWS[row];
-            result.push(cellId);
-          }
+          let row2 =
+            this.color === WHITE && coordinate[1] === "2"
+              ? row + 2
+              : this.color === BLACK && coordinate[1] === "7"
+              ? row - 2
+              : null;
+          this.cells[row1 * boardSize + col].status == null &&
+            row2 &&
+            result.push(COLUMNS[col] + ROWS[row2]);
+
+          let col1 = col + 1;
+          let col2 = col - 1;
+          col + 1 < boardSize &&
+            this.cells[row1 * boardSize + col1].status &&
+            this.cells[row1 * boardSize + col1].status.color !== this.color &&
+            result.push(COLUMNS[col1] + ROWS[row1]);
+          col - 1 >= 0 &&
+            this.cells[row1 * boardSize + col2].status &&
+            this.cells[row1 * boardSize + col2].status.color !== this.color &&
+            result.push(COLUMNS[col2] + ROWS[row1]);
 
           return result;
         };
