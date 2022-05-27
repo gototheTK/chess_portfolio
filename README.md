@@ -95,7 +95,7 @@
       7. 현재셀에서 이동가능한 셀과 공격가능한 피스를 계산한다.[x] (2022.05.26)
       8. 턴을 바꾼다.
 
-      ![title](Images/CessAttack.PNG)
+![title](Images/CessAttack.PNG)
 
 ### 승리 혹은 패배조건
 
