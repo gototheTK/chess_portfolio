@@ -54,8 +54,30 @@ const KNIGHT = "knight";
 const BISHOP = "bishop";
 const ROOK = "rook";
 const PAWN = "pawn";
+const MOVE = "move";
 const INPASSING = "in_passing";
 const CASTLING = "castling";
+
+const castlingPosition = {
+  white: {
+    king: "e1",
+    leftRook: "a1",
+    rightRook: "h1",
+    castlingLeftRook: "d1",
+    castlingLeftKing: "c1",
+    castlingRightRook: "f1",
+    castlingRightKing: "g1",
+  },
+  black: {
+    king: "e8",
+    leftRook: "a8",
+    rightRook: "h8",
+    castlingLeftRook: "d8",
+    castlingLeftKing: "c8",
+    castlingRightRook: "f8",
+    castlingRightKing: "g8",
+  },
+};
 
 const toID = (id) => "#" + id;
 const toCircleID = (id) => "#c" + id;
@@ -102,7 +124,7 @@ class Board {
     this.turn = WHITE;
     this.cells = cells();
     this.pieceScale = 1;
-    this.inpassingCell = null;
+    this.isTurnInPassing = false;
     this.board = svg
       .attr(ID, BOARD)
       .selectAll(RECT)
@@ -124,7 +146,7 @@ class Board {
       })
       .on(CLICK, (e, d) => {
         // console.log(d.xi, d.yi, d.status);
-        this.select && this.move(e, d);
+        this.select && this.events(e, d);
         // console.log(d.xi, d.yi, d.status);
       });
 
@@ -145,87 +167,184 @@ class Board {
   }
 
   show = () => console.log(this.x, this.y, this.select);
-  move = (event, cell) => {
+
+  events = (event, cell) => {
     const contain = this.select.availableCells.indexOf(event.target.id);
     this.select.switchFill();
+    console.log();
     if (contain > -1) {
-      if (this.select.type === PAWN && (cell.yi === "5" || cell.yi === "4")) {
-        this.isInPassing(cell);
-      }
+      let action =
+        this.select.possibleCastling &&
+        (castlingPosition[this.turn].castlingLeftKing === event.target.id ||
+          castlingPosition[this.turn].castlingRightKing === event.target.id)
+          ? {
+              type: CASTLING,
+              color: this.turn,
+              cell: cell,
+              cells: this.cells,
+            }
+          : this.select.type === PAWN && this.isTurnInPassing
+          ? {
+              type: INPASSING,
+              cell: cell,
+              cells: this.cells,
+            }
+          : {
+              type: MOVE,
+              cell: cell,
+              cells: this.cells,
+            };
 
-      this.select.type === INPASSING && this.inPassing(cell);
-
-      this.select.piece.svg
-        .transition()
-        .duration(500)
-        .attr(TRANSFORM, toTransformScale(this.x, this.y, this.pieceScale));
-      this.cells[this.select.currentCellIndex].status = null;
-      this.select.currentCellIndex = cell.index;
-      this.cells[cell.index].status = this.select;
-      this.select.coordinate = `${cell.xi}${cell.yi}`;
-      this.select.availableCells = this.select.findAvailableCells(
-        this.select.coordinate
+      console.log(
+        this.turn,
+        this.select.possibleCastling,
+        castlingPosition[this.turn].castlingLeftKing,
+        castlingPosition[this.turn].castlingRightKing,
+        castlingPosition[this.turn].castlingLeftKing === event.target.id ||
+          castlingPosition[this.turn].castlingRightKing === event.target.id,
+        event.target.id,
+        action
       );
-      this.switchTurn();
+      this.eventsReducer(action);
     }
-    this.select = null;
   };
 
-  events(name) {
-    switch (name) {
-      case INPASSING:
-        break;
+  eventsReducer = (action) => {
+    switch (action.type) {
       case CASTLING:
+        this.castling(action.cell, action.cells, action.color);
+        break;
+      case INPASSING:
+        this.inPassing(action.cell, action.cells);
+        break;
+      case MOVE:
+        this.move(action.cell, action.cells);
         break;
       default:
     }
-  }
 
-  inPassing(cell) {
-    this.cells[cell.index].status.piece.svg
+    this.select = null;
+  };
+
+  move = (cell, cells) => {
+    // isInPassing
+    this.select.type === PAWN &&
+      ((this.turn === BLACK && cell.yi === "5") ||
+        (this.turn === WHITE && cell.yi === "4")) &&
+      this.isInPassing(cell);
+
+    this.select.piece.svg
+      .transition()
+      .duration(500)
+      .attr(TRANSFORM, toTransformScale(this.x, this.y, this.pieceScale));
+    this.cells[this.select.currentCellIndex].status = null;
+    this.select.currentCellIndex = cell.index;
+    this.cells[cell.index].status = this.select;
+    this.select.coordinate = `${cell.xi}${cell.yi}`;
+    this.select.availableCells = this.select.findAvailableCells(
+      this.select.coordinate
+    );
+  };
+
+  castling = (cell, cells, color) => {
+    const kingCoordinate = castlingPosition[color].king;
+    const direction = toCol[cell.xi] > toCol[kingCoordinate[0]] ? true : false;
+    console.log(direction);
+    const rookCoordinate = direction
+      ? castlingPosition[color].rightRook
+      : castlingPosition[color].leftRook;
+
+    const fromKingCell = cells[calIndex(kingCoordinate[1], kingCoordinate[0])];
+    const fromRookCell = cells[calIndex(rookCoordinate[1], rookCoordinate[0])];
+
+    const king = fromKingCell.status;
+    const rook = fromRookCell.status;
+
+    console.log(fromKingCell);
+    console.log(fromRookCell);
+
+    const toKingCoordinate = direction
+      ? castlingPosition[color].castlingRightKing
+      : castlingPosition[color].castlingLeftKing;
+    const toRookCoordinate = direction
+      ? castlingPosition[color].castlingRightRook
+      : castlingPosition[color].castlingLeftRook;
+    console.log(toRookCoordinate);
+    const toKingCell =
+      cells[calIndex(toKingCoordinate[1], toKingCoordinate[0])];
+    const toRookCell =
+      cells[calIndex(toRookCoordinate[1], toRookCoordinate[0])];
+
+    console.log(toRookCell);
+    console.log(toKingCell);
+    king.piece.svg
       .transition()
       .duration(500)
       .attr(
         TRANSFORM,
-        toTransformScale(this.x + svgWidth, this.y, this.pieceScale)
+        toTransformScale(toKingCell.x, toKingCell.y, this.pieceScale)
       );
-    this.select.type = PAWN;
-    console.log("패싱후", this.select.type);
+
+    fromKingCell.status = null;
+    king.currentCellIndex = toKingCell.index;
+    toKingCell.status = king;
+    king.coordinate = `${toKingCell.xi}${toKingCell.yi}`;
+
+    rook.piece.svg
+      .transition()
+      .duration(500)
+      .attr(
+        TRANSFORM,
+        toTransformScale(toRookCell.x, toRookCell.y, this.pieceScale)
+      );
+
+    fromRookCell.status = null;
+    rook.currentCellIndex = toRookCell.index;
+    toRookCell.status = rook;
+    rook.coordinate = `${toRookCell.xi}${toRookCell.yi}`;
+
+    king.availableCells = king.findAvailableCells(toKingCoordinate);
+    rook.availableCells = rook.findAvailableCells(toRookCoordinate);
+  };
+
+  inPassing(cell, cells) {
+    this.isTurnInPassing = false;
+    cells[cell.index].status &&
+      cells[cell.index].status.piece.svg
+        .transition()
+        .duration(500)
+        .attr(
+          TRANSFORM,
+          toTransformScale(cell.x + svgWidth, cell.y, this.pieceScale)
+        );
+    this.move(cell, cells);
   }
 
   isInPassing(cell) {
     const col = toCol[cell.xi];
     const row = toRow[cell.yi];
     let row1 = this.select.color === BLACK ? row + 1 : row - 1;
-    let col1 = col + 1 < boardSize ? col + 1 : null;
-    let col2 = col - 1 >= 0 ? col - 1 : null;
+    let rightCell = col + 1 < boardSize ? col + 1 : null;
+    let leftCell = col - 1 >= 0 ? col - 1 : null;
 
-    const right =
-      col1 &&
-      this.cells[row * boardSize + col1].status &&
-      this.cells[row * boardSize + col1].status.color !== this.select.color;
+    let right =
+      rightCell &&
+      this.cells[row * boardSize + rightCell].status &&
+      this.cells[row * boardSize + rightCell].status.color !==
+        this.select.color &&
+      rightCell;
 
-    const left =
-      col2 &&
-      this.cells[row * boardSize + col2].status &&
-      this.cells[row * boardSize + col2].status.color !== this.select.color;
+    let left =
+      leftCell &&
+      this.cells[row * boardSize + leftCell].status &&
+      this.cells[row * boardSize + leftCell].status.color !==
+        this.select.color &&
+      leftCell;
 
-    left !== null &&
-      left !== false &&
-      left !== undefined &&
+    (right !== null || left !== null) &&
       (() => {
         this.cells[row1 * boardSize + col].status = this.select;
-        this.cells[row * boardSize + col2].status &&
-          (this.cells[row * boardSize + col2].status.type = INPASSING);
-      })();
-
-    right !== null &&
-      right !== false &&
-      right !== undefined &&
-      (() => {
-        this.cells[row1 * boardSize + col].status = this.select;
-        this.cells[row * boardSize + col1].status &&
-          (this.cells[row * boardSize + col1].status.type = INPASSING);
+        this.isTurnInPassing = true;
       })();
   }
 
@@ -248,6 +367,7 @@ export class Piece {
     this.color = color;
     this.type = type;
     this.givenCells = [];
+    this.possibleCastling = false;
     this.availableCells = this.findAvailableCells(coordinate);
     this.piece = this.makePiece(svg, color, type, coordinate);
     this.selected = false;
@@ -264,6 +384,9 @@ export class Piece {
         this.board.pieceScale
       )
     );
+
+    this.possibleCastling = type === KING ? true : false;
+
     const index = calIndex(coordinate[1], coordinate[0]);
     this.currentCellIndex = index;
     this.board.cells[index].status = this;
@@ -352,7 +475,7 @@ export class Piece {
     switch (type) {
       case KING:
         return (coordinate) => {
-          const result = [];
+          const result = this.possibleCastling ? this.isCastling() : [];
 
           //North
           let row = toRow[coordinate[1]] + 1;
@@ -669,71 +792,65 @@ export class Piece {
 
           return result;
         };
-      case INPASSING:
-        return (coordinate) => {
-          let result = [];
-          let col = toCol[coordinate[0]];
-          let row = toRow[coordinate[1]];
-
-          row = this.color === WHITE ? row + 1 : row - 1;
-          row < boardSize &&
-            row >= 0 &&
-            this.cells[row * boardSize + col].status == null &&
-            result.push(COLUMNS[col] + ROWS[row]);
-
-          let col1 = col + 1 < boardSize ? col + 1 : null;
-          col1 &&
-            this.cells[row * boardSize + col1].status &&
-            this.cells[row * boardSize + col1].status.color !== this.color &&
-            result.push(COLUMNS[col1] + ROWS[row]);
-
-          let col2 = col - 1 >= 0 ? col - 1 : null;
-          col2 &&
-            this.cells[row * boardSize + col2].status &&
-            this.cells[row * boardSize + col2].status.color !== this.color &&
-            result.push(COLUMNS[col2] + ROWS[row]);
-
-          console.log(result);
-
-          return result;
-        };
-      case CASTLING:
-        return (coordinate) => {
-          let result = [];
-          let col = toCol[coordinate[0]];
-          let row = toRow[coordinate[1]];
-          let row1 = this.color === WHITE ? row + 1 : row - 1;
-          row1 < boardSize &&
-            row1 >= 0 &&
-            this.cells[row1 * boardSize + col].status == null &&
-            result.push(COLUMNS[col] + ROWS[row1]);
-
-          let row2 =
-            this.color === WHITE && coordinate[1] === "2"
-              ? row + 2
-              : this.color === BLACK && coordinate[1] === "7"
-              ? row - 2
-              : null;
-          this.cells[row1 * boardSize + col].status == null &&
-            row2 &&
-            result.push(COLUMNS[col] + ROWS[row2]);
-
-          let col1 = col + 1;
-          let col2 = col - 1;
-          col + 1 < boardSize &&
-            this.cells[row1 * boardSize + col1].status &&
-            this.cells[row1 * boardSize + col1].status.color !== this.color &&
-            result.push(COLUMNS[col1] + ROWS[row1]);
-          col - 1 >= 0 &&
-            this.cells[row1 * boardSize + col2].status &&
-            this.cells[row1 * boardSize + col2].status.color !== this.color &&
-            result.push(COLUMNS[col2] + ROWS[row1]);
-
-          return result;
-        };
       default:
         return null;
     }
+  }
+
+  isCastling() {
+    let result = [];
+    const leftCoordinate = castlingPosition[this.color].leftRook;
+    const leftCol = toCol[leftCoordinate[0]];
+    const leftRow = toRow[leftCoordinate[1]];
+    const rightPosition = castlingPosition[this.color].rightRook;
+    const rightCol = toCol[rightPosition[0]];
+    const rightRow = toRow[rightPosition[1]];
+
+    const leftRook = this.cells[leftRow * boardSize + leftCol];
+    const rightRook = this.cells[rightRow * boardSize + rightCol];
+
+    const castedRightKing = castlingPosition[this.color].castlingRightKing;
+    const rightKingCol = toCol[castedRightKing[0]];
+    const rightKingRow = toRow[castedRightKing[1]];
+
+    const castedLeftKing = castlingPosition[this.color].castlingLeftKing;
+    const leftKingCol = toCol[castedLeftKing[0]];
+    const leftKingRow = toRow[castedLeftKing[1]];
+
+    const castedRightRook = castlingPosition[this.color].castlingRightRook;
+    const rightRookCol = toCol[castedRightRook[0]];
+    const rightRookRow = toRow[castedRightRook[1]];
+
+    const castedLeftRook = castlingPosition[this.color].castlingLeftRook;
+    const leftRookCol = toCol[castedLeftRook[0]];
+    const leftRookRow = toRow[castedLeftRook[1]];
+
+    const isLeftPossible =
+      this.coordinate === castlingPosition[this.color].king &&
+      leftRook.status &&
+      leftRook.status.color === this.color;
+    const isRightPossible =
+      this.coordinate === castlingPosition[this.color].king &&
+      rightRook.status &&
+      rightRook.status.color === this.color;
+
+    if (isLeftPossible || isRightPossible) {
+      isLeftPossible &&
+        this.cells[leftKingRow * boardSize + leftKingCol] &&
+        this.cells[leftRookRow * boardSize + leftRookCol] &&
+        this.cells[leftKingRow * boardSize + leftKingCol].status == null &&
+        this.cells[leftRookRow * boardSize + leftRookCol].status == null &&
+        result.push(castedLeftKing);
+
+      isRightPossible &&
+        this.cells[rightKingRow * boardSize + rightKingCol].status == null &&
+        this.cells[rightRookRow * boardSize + rightRookCol].status == null &&
+        result.push(castedRightKing);
+    } else {
+      this.possibleCastling = false;
+    }
+
+    return result;
   }
 }
 
