@@ -124,7 +124,7 @@ class Board {
     this.turn = WHITE;
     this.cells = cells();
     this.pieceScale = 1;
-    this.isTurnInPassing = false;
+    this.inPassingCell = null;
     this.board = svg
       .attr(ID, BOARD)
       .selectAll(RECT)
@@ -183,28 +183,18 @@ class Board {
               cell: cell,
               cells: this.cells,
             }
-          : this.select.type === PAWN && this.isTurnInPassing
+          : this.inPassingCell
           ? {
               type: INPASSING,
               cell: cell,
               cells: this.cells,
+              inPassingCell: this.inPassingCell,
             }
           : {
               type: MOVE,
               cell: cell,
               cells: this.cells,
             };
-
-      console.log(
-        this.turn,
-        this.select.possibleCastling,
-        castlingPosition[this.turn].castlingLeftKing,
-        castlingPosition[this.turn].castlingRightKing,
-        castlingPosition[this.turn].castlingLeftKing === event.target.id ||
-          castlingPosition[this.turn].castlingRightKing === event.target.id,
-        event.target.id,
-        action
-      );
       this.eventsReducer(action);
     }
   };
@@ -215,15 +205,15 @@ class Board {
         this.castling(action.cell, action.cells, action.color);
         break;
       case INPASSING:
-        this.inPassing(action.cell, action.cells);
+        this.inPassing(action.cell, action.cells, action.inPassingCell);
         break;
       case MOVE:
         this.move(action.cell, action.cells);
         break;
       default:
     }
-
     this.select = null;
+    this.switchTurn();
   };
 
   move = (cell, cells) => {
@@ -231,7 +221,7 @@ class Board {
     this.select.type === PAWN &&
       ((this.turn === BLACK && cell.yi === "5") ||
         (this.turn === WHITE && cell.yi === "4")) &&
-      this.isInPassing(cell);
+      this.isInPassing(cell, this.cells, this.turn);
 
     this.select.piece.svg
       .transition()
@@ -275,8 +265,6 @@ class Board {
     const toRookCell =
       cells[calIndex(toRookCoordinate[1], toRookCoordinate[0])];
 
-    console.log(toRookCell);
-    console.log(toKingCell);
     king.piece.svg
       .transition()
       .duration(500)
@@ -307,45 +295,51 @@ class Board {
     rook.availableCells = rook.findAvailableCells(toRookCoordinate);
   };
 
-  inPassing(cell, cells) {
-    this.isTurnInPassing = false;
-    cells[cell.index].status &&
-      cells[cell.index].status.piece.svg
+  inPassing(cell, cells, inPassingCell) {
+    this.select.type === PAWN &&
+      cell.index === inPassingCell.moveCell.index &&
+      inPassingCell.pieceCell.status.piece.svg
         .transition()
         .duration(500)
         .attr(
           TRANSFORM,
           toTransformScale(cell.x + svgWidth, cell.y, this.pieceScale)
         );
+    inPassingCell.pieceCell.status = null;
+    this.offInPassing();
     this.move(cell, cells);
   }
 
-  isInPassing(cell) {
+  isInPassing(cell, cells, turn) {
     const col = toCol[cell.xi];
     const row = toRow[cell.yi];
-    let row1 = this.select.color === BLACK ? row + 1 : row - 1;
-    let rightCell = col + 1 < boardSize ? col + 1 : null;
-    let leftCell = col - 1 >= 0 ? col - 1 : null;
+    let backRow = turn === BLACK ? row + 1 : turn === WHITE ? row - 1 : null;
+    let rightCol = col + 1 < boardSize ? col + 1 : null;
+    let leftCol = col - 1 >= 0 ? col - 1 : null;
 
-    let right =
-      rightCell &&
-      this.cells[row * boardSize + rightCell].status &&
-      this.cells[row * boardSize + rightCell].status.color !==
-        this.select.color &&
-      rightCell;
+    console.log("앙파상", backRow, leftCol, rightCol);
 
-    let left =
-      leftCell &&
-      this.cells[row * boardSize + leftCell].status &&
-      this.cells[row * boardSize + leftCell].status.color !==
-        this.select.color &&
-      leftCell;
+    backRow &&
+      rightCol &&
+      cells[row * boardSize + rightCol].status &&
+      cells[row * boardSize + rightCol].status.color !== turn &&
+      this.onInPassing(cells[backRow * boardSize + col], cell);
+    console.log(this.inPassingCell);
+    backRow &&
+      leftCol &&
+      cells[row * boardSize + leftCol].status &&
+      cells[row * boardSize + leftCol].status.color !== turn &&
+      this.onInPassing(cells[backRow * boardSize + col], cell);
 
-    (right !== null || left !== null) &&
-      (() => {
-        this.cells[row1 * boardSize + col].status = this.select;
-        this.isTurnInPassing = true;
-      })();
+    console.log(this.inPassingCell);
+  }
+
+  offInPassing() {
+    this.inPassingCell = null;
+  }
+
+  onInPassing(moveCell, pieceCell) {
+    this.inPassingCell = { moveCell: moveCell, pieceCell: pieceCell };
   }
 
   switchTurn() {
@@ -455,6 +449,8 @@ export class Piece {
     this.fillStatus = this.selected ? 0.5 : 0;
     this.selected &&
       (this.availableCells = this.findAvailableCells(this.coordinate));
+
+    console.log(this.availableCells);
 
     this.piece.rect.attr(FILLOPACITY, this.fillStatus) &&
       this.availableCells.map((cell) => {
@@ -775,6 +771,21 @@ export class Piece {
               : this.color === BLACK && coordinate[1] === "7"
               ? row - 2
               : null;
+
+          this.color === WHITE &&
+            coordinate[1] === "5" &&
+            this.board.inPassingCell &&
+            result.push(
+              this.board.inPassingCell.moveCell.xi +
+                this.board.inPassingCell.moveCell.yi
+            );
+          this.color === BLACK &&
+            coordinate[1] === "4" &&
+            this.board.inPassingCell &&
+            result.push(
+              this.board.inPassingCell.moveCell.xi +
+                this.board.inPassingCell.moveCell.yi
+            );
 
           row2 &&
             this.cells[row2 * boardSize + col].status == null &&
