@@ -109,7 +109,7 @@
 
 ![title](Images/INPASSING.gif)
 
-## ~~ 캐슬링[x] (2022.05.29)~~
+### ~~ 캐슬링[x] (2022.05.29)~~
 
 ![title](Images/castling.gif)
 
