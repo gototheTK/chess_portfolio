@@ -471,7 +471,7 @@ export class Piece {
     switch (type) {
       case KING:
         return (coordinate) => {
-          const result = this.possibleCastling ? this.isCastling() : [];
+          const result = this.possibleCastling ? this.castlingCells() : [];
 
           //North
           let row = toRow[coordinate[1]] + 1;
@@ -808,7 +808,7 @@ export class Piece {
     }
   }
 
-  isCastling() {
+  castlingCells() {
     let result = [];
     const leftCoordinate = castlingPosition[this.color].leftRook;
     const leftCol = toCol[leftCoordinate[0]];

@@ -15,7 +15,7 @@
    - Node.js
    - Express
    - Nginx
-3. Eviroment
+3. Environment
    - Centos OS(WSL2)
 
 ## Making Components of Chess
@@ -25,7 +25,7 @@
    - [x] cells
    - [x] colors of cells
 
-2. ~~ChessPieaces~~
+2. ~~ChessPieces~~
 
    - [x] white king
    - [x] black king
@@ -119,4 +119,5 @@
 
 ### 승리 혹은 패배조건
 
-      1. 왕이 상대방의 말로 하여금 더 이상 이동할수없다면 승리와 패배를 선언한다.
+      1. 왕이 상대방의 말로 하여금 체크상태에서 더 이상 이동할수없다면 승리와 패배를 선언한다.
+      2.
