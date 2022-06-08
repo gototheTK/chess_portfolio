@@ -68,6 +68,34 @@ class ChessGame extends React.Component {
     return (
       <section style={chess}>
         <svg id={CHESS} style={svgSize}></svg>
+        <div style={status}>
+          <ul style={player}>
+            <span>black</span>
+            <li>1</li>
+            <li>1</li>
+            <li>1</li>
+            <li>1</li>
+            <li>1</li>
+            <li>1</li>
+            <li>1</li>
+            <li>1</li>
+            <li>1</li>
+            <li>1</li>
+            <li>1</li>
+            <li>1</li>
+          </ul>
+          <ul style={player}>
+            <span>white</span>
+            <li>1</li>
+            <li>1</li>
+            <li>1</li>
+            <li>1</li>
+            <li>1</li>
+            <li>1</li>
+            <li>1</li>
+            <li>1</li>
+          </ul>
+        </div>
       </section>
     );
   }

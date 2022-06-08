@@ -5,7 +5,6 @@ import { whitePieces } from "./pieces/whitePieces";
 const BOARD = "board";
 const WIDTH = "width";
 const HEIGHT = "height";
-const TEXT = "text";
 const FILL = "fill";
 const ID = "id";
 const FILLOPACITY = "fill-opacity";
@@ -14,8 +13,6 @@ const TRANSFORM = "transform";
 const POINTEREVENTS = "pointer-events";
 const MOUSEOVER = "mouseover";
 const NONE = "none";
-const CURSOR = "cursor";
-const CURSORVALUE = "default";
 
 const RECT = "rect";
 const X = "x";
@@ -35,14 +32,11 @@ const COLUMNS = ["a", "b", "c", "d", "e", "f", "g", "h"];
 const toRow = { 1: 0, 2: 1, 3: 2, 4: 3, 5: 4, 6: 5, 7: 6, 8: 7 };
 const toCol = { a: 0, b: 1, c: 2, d: 3, e: 4, f: 5, g: 6, h: 7 };
 
-const siezedSpace = 50;
 export const boardSize = 8;
 export const cellSize = 45;
-export const svgWidth = (boardSize + 5) * cellSize;
+export const svgWidth = boardSize * cellSize;
 export const svgHeight = boardSize * cellSize;
 const boardHeight = (boardSize - 1) * cellSize;
-
-const initialBoardPosition = { x: 0, y: 0 };
 
 const cellNumbers = 64;
 const cellColors = ["hsl(30, 100%, 81%, 0.7)", "	hsl(30, 60%, 55%, 0.7)"];
@@ -51,10 +45,6 @@ const possiblePlaceColor = "hsl(131, 54%, 30%, 0.5)";
 const currentPlaceColor = "hsl(131, 54%, 50%, 0.4)";
 const attackPlaceColor = "hsl(131, 10%, 50%, 0.4)";
 const checkPlaceColor = "hsl(0, 100%, 50%, 0.3)";
-const movePiece = {
-  white: boardSize * cellSize,
-  black: (boardSize + 2) * cellSize,
-};
 
 const WHITE = "white";
 const BLACK = "black";
@@ -127,13 +117,6 @@ const cells = () => {
 
 class Board {
   constructor(svg, player) {
-    this.seizedPosition = {
-      white: { x: boardSize * cellSize, y: initialBoardPosition.y },
-      black: {
-        x: boardSize * cellSize + siezedSpace * 2,
-        y: initialBoardPosition.y,
-      },
-    };
     this.select = null;
     this.x = 0;
     this.y = 0;
@@ -234,7 +217,6 @@ class Board {
   };
 
   move = (cell, cells) => {
-    console.log(cell);
     // isInPassing
     this.select.type === PAWN &&
       ((this.turn === BLACK && cell.yi === "5") ||
@@ -243,8 +225,8 @@ class Board {
 
     this.select.piece.svg
       .transition()
-      .duration(200)
-      .attr(TRANSFORM, toTransformScale(cell.x, cell.y, this.pieceScale));
+      .duration(500)
+      .attr(TRANSFORM, toTransformScale(this.x, this.y, this.pieceScale));
     this.cells[this.select.currentCellIndex].status = null;
     this.select.currentCellIndex = cell.index;
     this.cells[cell.index].status = this.select;
@@ -285,7 +267,7 @@ class Board {
 
     king.piece.svg
       .transition()
-      .duration(1000)
+      .duration(500)
       .attr(
         TRANSFORM,
         toTransformScale(toKingCell.x, toKingCell.y, this.pieceScale)
@@ -298,7 +280,7 @@ class Board {
 
     rook.piece.svg
       .transition()
-      .duration(1000)
+      .duration(500)
       .attr(
         TRANSFORM,
         toTransformScale(toRookCell.x, toRookCell.y, this.pieceScale)
@@ -318,25 +300,11 @@ class Board {
       cell.index === inPassingCell.moveCell.index &&
       inPassingCell.pieceCell.status.piece.svg
         .transition()
-        .duration(100)
+        .duration(500)
         .attr(
           TRANSFORM,
-          toTransformScale(
-            this.seizedPosition[inPassingCell.pieceCell.status.color].x,
-            this.seizedPosition[inPassingCell.pieceCell.status.color].y,
-            this.pieceScale
-          )
-        )
-        .style(CURSOR, CURSORVALUE);
-
-    inPassingCell.pieceCell.status.piece.svg
-      .attr(WIDTH, siezedSpace)
-      .append(TEXT)
-      .attr(X, cellSize)
-      .attr(Y, cellSize / 2)
-      .text(inPassingCell.pieceCell.status.coordinate) &&
-      inPassingCell.pieceCell.status.updateSeizedPosition();
-
+          toTransformScale(cell.x + svgWidth, cell.y, this.pieceScale)
+        );
     inPassingCell.pieceCell.status = null;
     this.offInPassing();
     this.move(cell, cells);
@@ -387,7 +355,6 @@ const pieceTypes = {
 export class Piece {
   constructor(svg, board, coordinate, color, type) {
     this.board = board;
-    this.seizedPosition = board.seizedPosition[color];
     this.cells = board.cells;
     this.coordinate = coordinate;
     this.currentCellIndex = null;
@@ -441,32 +408,37 @@ export class Piece {
           );
           console.log(this.coordinate);
           if (index > -1) {
-            this.piece.svg
+            this.board.select.piece.svg
               .transition()
-              .duration(100)
+              .duration(500)
               .attr(
                 TRANSFORM,
                 toTransformScale(
-                  this.seizedPosition.x,
-                  this.seizedPosition.y,
+                  toX(this.coordinate[0]),
+                  toY(this.coordinate[1]),
                   this.board.pieceScale
                 )
-              )
-              .style(CURSOR, CURSORVALUE);
-
-            this.piece.svg
-              .attr(WIDTH, siezedSpace)
-              .append(TEXT)
-              .attr(X, cellSize)
-              .attr(Y, cellSize / 2)
-              .text(this.coordinate) && this.updateSeizedPosition();
-
-            this.board.eventsReducer({
-              type: MOVE,
-              cell: this.cells[this.currentCellIndex],
-              cells: this.cells,
-            });
+              ) &&
+              this.piece.svg
+                .transition()
+                .duration(500)
+                .attr(
+                  TRANSFORM,
+                  toTransformScale(
+                    toX(this.coordinate[0]) + svgWidth,
+                    toY(this.coordinate[1]),
+                    this.board.pieceScale
+                  )
+                );
+            this.cells[this.board.select.currentCellIndex].status = null;
+            this.board.select.currentCellIndex = this.currentCellIndex;
+            this.cells[this.currentCellIndex].status = this.board.select;
+            this.board.select.coordinate = this.coordinate;
+            this.board.select.availableCells =
+              this.board.select.findAvailableCells(this.coordinate);
+            this.board.switchTurn();
           }
+          this.board.select = null;
         })();
     });
     return this.piece;
@@ -784,14 +756,8 @@ export class Piece {
           let col = toCol[coordinate[0]];
           let row = toRow[coordinate[1]];
 
-          let col1 =
-            col + 1 < boardSize && row + 1 < boardSize && row + 1 >= 0
-              ? col + 1
-              : null;
-          let col2 =
-            col - 1 >= 0 && row + 1 < boardSize && row + 1 >= 0
-              ? col - 1
-              : null;
+          let col1 = col + 1 < boardSize ? col + 1 : null;
+          let col2 = col - 1 >= 0 ? col - 1 : null;
 
           let row1 = this.color === WHITE ? row + 1 : row - 1;
           row1 < boardSize &&
@@ -896,19 +862,6 @@ export class Piece {
     }
 
     return result;
-  }
-
-  updateSeizedPosition() {
-    this.piece.rect.on(CLICK, null);
-    this.seizedPosition.x =
-      this.seizedPosition.y >= svgHeight - cellSize
-        ? this.seizedPosition.x + siezedSpace
-        : this.seizedPosition.x;
-
-    this.seizedPosition.y =
-      this.seizedPosition.y >= svgHeight - cellSize
-        ? initialBoardPosition.y
-        : this.seizedPosition.y + cellSize;
   }
 }
 

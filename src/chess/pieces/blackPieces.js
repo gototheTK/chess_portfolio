@@ -297,7 +297,7 @@ export const blackPieces = {
       .attr("stroke-opacity", 0);
   },
   pawn: function (svg) {
-    this.svg = svg.append("g").attr("style", "cursor:pointer");
+    this.svg = svg.append("g").attr("style", "stroke:#000000; cursor:pointer;");
     this.svg
       .append("path")
       .attr(
